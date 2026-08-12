@@ -14,6 +14,7 @@ function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || '');
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
+  const [userRole, setUserRole] = useState(localStorage.getItem('role') || '');
   const [isLoading, setIsLoading] = useState(false);
 
   // Registration Form State
@@ -140,6 +141,7 @@ function App() {
       setProdMeta(null);
       setUserEmail('');
       setUserName('');
+      setUserRole('');
     }
   }, [token, fetchCategories, fetchProducts]);
 
@@ -201,7 +203,10 @@ function App() {
         setToken(newToken);
         setUserEmail(data.data.user.email);
         setUserName(data.data.user.name || '');
+        const role = data.data.user.role || '';
+        setUserRole(role);
         localStorage.setItem('token', newToken);
+        if (role) localStorage.setItem('role', role);
         setLoginMessageType('success');
         setLoginMessage('Login successful!');
         setLoginEmail('');
@@ -222,10 +227,12 @@ function App() {
     setToken('');
     setUserEmail('');
     setUserName('');
+    setUserRole('');
     setCategories([]);
     setProducts([]);
     setProdMeta(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('role');
     setLoginMessageType('success');
     setLoginMessage('Logged out successfully.');
     clearMessages();
@@ -328,7 +335,7 @@ function App() {
 
     const style = {
       padding: '10px',
-      borderRadius: '4px',
+
       margin: '10px 0',
       color: type === 'success' ? '#155724' : '#721c24',
       backgroundColor: type === 'success' ? '#d4edda' : '#f8d7da',
@@ -352,7 +359,7 @@ function App() {
       <section style={{
         background: token ? '#d4edda' : '#f8d7da',
         padding: '15px',
-        borderRadius: '4px',
+        borderRadius: '2px',
         marginBottom: '20px'
       }}>
         <h2>Authentication Status</h2>
@@ -363,6 +370,13 @@ function App() {
               <br />
               <strong>User:</strong> {userName || userEmail}
               {userName && <span> ({userEmail})</span>}
+              <br />
+              <strong>Role:</strong> {userRole}
+              {userRole === 'USER' && (
+                <span style={{ marginLeft: '10px', fontSize: '0.9em', color: '#6c757d', fontStyle: 'italic' }}>
+                  Logged in as Regular User (Read-Only Actions)
+                </span>
+              )}
             </>
           )}
         </p>
@@ -374,7 +388,7 @@ function App() {
               backgroundColor: '#dc3545',
               color: 'white',
               border: 'none',
-              borderRadius: '4px',
+              borderRadius: '2px',
               cursor: 'pointer'
             }}
           >
@@ -385,101 +399,160 @@ function App() {
 
       <hr style={{ margin: '30px 0' }} />
 
-      {/* Registration Section */}
+      {/* Login and Registration*/}
       <section>
-        <h2>Register</h2>
-        <form onSubmit={handleRegister} style={{ marginBottom: '10px' }}>
-          <div style={{ marginBottom: '10px' }}>
-            <input
-              type="text"
-              placeholder="Full Name"
-              value={regName}
-              onChange={(e) => setRegName(e.target.value)}
-              required
-              style={{ padding: '8px', width: '100%', maxWidth: '300px' }}
-            />
+        <h2 style={{ marginBottom: '20px' }}>Authentication</h2>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '30px',
+          marginBottom: '20px'
+        }}>
+          {/* Login Section*/}
+          <div style={{
+            padding: '20px',
+            borderRadius: '2px',
+            border: '1px solid #dee2e6'
+          }}>
+            <h3 style={{ marginTop: 0 }}>Login</h3>
+            <form onSubmit={handleLogin}>
+              <div style={{ marginBottom: '10px' }}>
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  required
+                  style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  required
+                  style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div style={{ marginBottom: '10px', display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginEmail('admin@test.dev');
+                    setLoginPassword('admin123');
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '6px',
+                    backgroundColor: '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.85em',
+                    borderRadius: '2px',
+                  }}
+                >
+                  Demo Admin
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginEmail('user@test.dev');
+                    setLoginPassword('user123');
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '6px',
+                    backgroundColor: '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.85em',
+                    borderRadius: '2px',
+                  }}
+                >
+                  Demo User
+                </button>
+              </div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '2px',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  width: '100%'
+                }}
+              >
+                {isLoading ? 'Logging in...' : 'Login'}
+              </button>
+            </form>
+            {renderMessage(loginMessage, loginMessageType)}
           </div>
-          <div style={{ marginBottom: '10px' }}>
-            <input
-              type="email"
-              placeholder="Email"
-              value={regEmail}
-              onChange={(e) => setRegEmail(e.target.value)}
-              required
-              style={{ padding: '8px', width: '100%', maxWidth: '300px' }}
-            />
-          </div>
-          <div style={{ marginBottom: '10px' }}>
-            <input
-              type="password"
-              placeholder="Password (min 6 characters)"
-              value={regPassword}
-              onChange={(e) => setRegPassword(e.target.value)}
-              required
-              minLength="6"
-              style={{ padding: '8px', width: '100%', maxWidth: '300px' }}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={isLoading}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: isLoading ? 'not-allowed' : 'pointer'
-            }}
-          >
-            {isLoading ? 'Registering...' : 'Register'}
-          </button>
-        </form>
-        {renderMessage(regMessage, regMessageType)}
-      </section>
 
-      <hr style={{ margin: '30px 0' }} />
-
-      {/* Login Section */}
-      <section>
-        <h2>Login</h2>
-        <form onSubmit={handleLogin} style={{ marginBottom: '10px' }}>
-          <div style={{ marginBottom: '10px' }}>
-            <input
-              type="email"
-              placeholder="Email"
-              value={loginEmail}
-              onChange={(e) => setLoginEmail(e.target.value)}
-              required
-              style={{ padding: '8px', width: '100%', maxWidth: '300px' }}
-            />
+          {/* Registration */}
+          <div style={{
+            padding: '20px',
+            borderRadius: '2px',
+            border: '1px solid #dee2e6'
+          }}>
+            <h3 style={{ marginTop: 0 }}>Register</h3>
+            <form onSubmit={handleRegister}>
+              <div style={{ marginBottom: '10px' }}>
+                <input
+                  type="text"
+                  placeholder="Full Name"
+                  value={regName}
+                  onChange={(e) => setRegName(e.target.value)}
+                  required
+                  style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={regEmail}
+                  onChange={(e) => setRegEmail(e.target.value)}
+                  required
+                  style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <input
+                  type="password"
+                  placeholder="Password (min 6 characters)"
+                  value={regPassword}
+                  onChange={(e) => setRegPassword(e.target.value)}
+                  required
+                  minLength="6"
+                  style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '2px',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  width: '100%'
+                }}
+              >
+                {isLoading ? 'Registering...' : 'Register'}
+              </button>
+            </form>
+            {renderMessage(regMessage, regMessageType)}
           </div>
-          <div style={{ marginBottom: '10px' }}>
-            <input
-              type="password"
-              placeholder="Password"
-              value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-              required
-              style={{ padding: '8px', width: '100%', maxWidth: '300px' }}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={isLoading}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: isLoading ? 'not-allowed' : 'pointer'
-            }}
-          >
-            {isLoading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-        {renderMessage(loginMessage, loginMessageType)}
+        </div>
       </section>
 
       <hr style={{ margin: '30px 0' }} />
@@ -488,30 +561,32 @@ function App() {
       {token && (
         <section>
           <h2>Categories</h2>
-          <form onSubmit={handleAddCategory} style={{ marginBottom: '10px' }}>
-            <input
-              type="text"
-              placeholder="Category Name"
-              value={catName}
-              onChange={(e) => setCatName(e.target.value)}
-              required
-              style={{ padding: '8px', marginRight: '10px', width: '200px' }}
-            />
-            <button
-              type="submit"
-              disabled={isCategoryLoading}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#28a745',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: isCategoryLoading ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {isCategoryLoading ? 'Adding...' : 'Add Category'}
-            </button>
-          </form>
+          {userRole === 'ADMIN' && (
+            <form onSubmit={handleAddCategory} style={{ marginBottom: '10px' }}>
+              <input
+                type="text"
+                placeholder="Category Name"
+                value={catName}
+                onChange={(e) => setCatName(e.target.value)}
+                required
+                style={{ padding: '8px', marginRight: '10px', width: '200px' }}
+              />
+              <button
+                type="submit"
+                disabled={isCategoryLoading}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '2px',
+                  cursor: isCategoryLoading ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isCategoryLoading ? 'Adding...' : 'Add Category'}
+              </button>
+            </form>
+          )}
 
           {renderMessage(catMessage, catMessageType)}
 
@@ -538,20 +613,22 @@ function App() {
                     <td style={{ padding: '8px' }}>{cat.id}</td>
                     <td style={{ padding: '8px' }}>{cat.name}</td>
                     <td style={{ padding: '8px' }}>
-                      <button
-                        onClick={() => handleDeleteCategory(cat.id)}
-                        disabled={isCategoryLoading}
-                        style={{
-                          padding: '4px 12px',
-                          backgroundColor: '#dc3545',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: isCategoryLoading ? 'not-allowed' : 'pointer'
-                        }}
-                      >
-                        Delete
-                      </button>
+                      {userRole === 'ADMIN' && (
+                        <button
+                          onClick={() => handleDeleteCategory(cat.id)}
+                          disabled={isCategoryLoading}
+                          style={{
+                            padding: '4px 12px',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '2px',
+                            cursor: isCategoryLoading ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          Delete
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -570,7 +647,7 @@ function App() {
         <form onSubmit={handleApplyFilters} style={{
           background: '#f8f9fa',
           padding: '15px',
-          borderRadius: '4px',
+
           marginBottom: '15px'
         }}>
           <div style={{ marginBottom: '10px' }}>
@@ -648,7 +725,7 @@ function App() {
               backgroundColor: '#007bff',
               color: 'white',
               border: 'none',
-              borderRadius: '4px',
+              borderRadius: '2px',
               cursor: isProductsLoading ? 'not-allowed' : 'pointer'
             }}
           >
@@ -718,7 +795,7 @@ function App() {
                   backgroundColor: '#6c757d',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: '2px',
                   cursor: (prodMeta.page <= 1 || isProductsLoading) ? 'not-allowed' : 'pointer',
                   opacity: (prodMeta.page <= 1 || isProductsLoading) ? 0.6 : 1
                 }}
@@ -733,7 +810,7 @@ function App() {
                   backgroundColor: '#007bff',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: '2px',
                   cursor: (prodMeta.page >= prodMeta.totalPages || isProductsLoading) ? 'not-allowed' : 'pointer',
                   opacity: (prodMeta.page >= prodMeta.totalPages || isProductsLoading) ? 0.6 : 1
                 }}
