@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import bcrypt from 'bcrypt';
 import prisma from '../src/lib/prisma';
 
@@ -9,26 +11,31 @@ async function main() {
   await prisma.user.deleteMany();
 
   // Users
-  const passwordAdmin = await bcrypt.hash('adminpass', 10);
-  const passwordUser = await bcrypt.hash('userpass', 10);
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@test.dev';
+  const adminPasswordPlain = process.env.ADMIN_PASSWORD || 'admin123';
+  const userEmail = process.env.USER_EMAIL || 'user@test.dev';
+  const userPasswordPlain = process.env.USER_PASSWORD || 'user123';
+
+  const passwordAdmin = await bcrypt.hash(adminPasswordPlain, 10);
+  const passwordUser = await bcrypt.hash(userPasswordPlain, 10);
 
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@example.com' },
+    where: { email: adminEmail },
     update: {},
     create: {
       name: 'Admin',
-      email: 'admin@example.com',
+      email: adminEmail,
       password: passwordAdmin,
       role: 'ADMIN',
     },
   });
 
   const regular = await prisma.user.upsert({
-    where: { email: 'user@example.com' },
+    where: { email: userEmail },
     update: {},
     create: {
       name: 'Regular User',
-      email: 'user@example.com',
+      email: userEmail,
       password: passwordUser,
       role: 'USER',
     },
