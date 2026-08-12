@@ -20,11 +20,12 @@ const createProduct = async (req: Request, res: Response, next: NextFunction) =>
 
 const getAllProducts = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await ProductService.getAllProducts();
+    const result = await ProductService.getAllProducts(req.query);
     res.status(200).json({
       success: true,
       message: 'Products fetched successfully',
-      data: result,
+      data: result.products,
+      meta: result.meta,
     });
   } catch (error) {
     next(error);
