@@ -22,10 +22,26 @@ function App() {
   const [catName, setCatName] = useState('');
   const [catMessage, setCatMessage] = useState('');
 
+  // Products State
+  const [products, setProducts] = useState([]);
+  const [prodMessage, setProdMessage] = useState('');
+
+  // Product Query State
+  const [prodSearch, setProdSearch] = useState('');
+  const [prodCategoryId, setProdCategoryId] = useState('');
+  const [prodMinPrice, setProdMinPrice] = useState('');
+  const [prodMaxPrice, setProdMaxPrice] = useState('');
+  const [prodSortBy, setProdSortBy] = useState('createdAt');
+  const [prodSortOrder, setProdSortOrder] = useState('desc');
+  const [prodPage, setProdPage] = useState(1);
+  const [prodLimit, setProdLimit] = useState(10);
+  const [prodMeta, setProdMeta] = useState(null);
+
   // Initial fetch if token exists
   useEffect(() => {
     if (token) {
       fetchCategories();
+      fetchProducts(1);
     }
   }, [token]);
 
@@ -74,6 +90,8 @@ function App() {
     setToken('');
     setUserEmail('');
     setCategories([]);
+    setProducts([]);
+    setProdMeta(null);
     localStorage.removeItem('token');
     setLoginMessage('Logged out.');
   };
@@ -89,6 +107,50 @@ function App() {
       }
     } catch (err) {
       setCatMessage(`Error fetching categories: ${err.message}`);
+    }
+  };
+
+  const fetchProducts = async (pageToFetch = prodPage) => {
+    try {
+      const params = new URLSearchParams();
+      if (prodSearch) params.append('search', prodSearch);
+      if (prodCategoryId) params.append('categoryId', prodCategoryId);
+      if (prodMinPrice) params.append('minPrice', prodMinPrice);
+      if (prodMaxPrice) params.append('maxPrice', prodMaxPrice);
+      params.append('sortBy', prodSortBy);
+      params.append('sortOrder', prodSortOrder);
+      params.append('page', pageToFetch);
+      params.append('limit', prodLimit);
+
+      const res = await fetch(`${API_BASE}/products?${params.toString()}`);
+      const data = await res.json();
+      if (data.success) {
+        setProducts(data.data);
+        setProdMeta(data.meta);
+        setProdPage(data.meta.page);
+        setProdMessage('Products fetched successfully.');
+      } else {
+        setProdMessage(`Error fetching products: ${data.message}`);
+      }
+    } catch (err) {
+      setProdMessage(`Error: ${err.message}`);
+    }
+  };
+
+  const handleApplyFilters = (e) => {
+    e.preventDefault();
+    fetchProducts(1); // Reset to page 1 on new filters
+  };
+
+  const handleNextPage = () => {
+    if (prodMeta && prodPage < prodMeta.totalPages) {
+      fetchProducts(prodPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (prodPage > 1) {
+      fetchProducts(prodPage - 1);
     }
   };
 
@@ -213,6 +275,69 @@ function App() {
           </table>
         </section>
       )}
+
+      <hr />
+
+      <section>
+        <h2>Products</h2>
+
+        <form onSubmit={handleApplyFilters}>
+          <label>Search: <input type="text" value={prodSearch} onChange={(e) => setProdSearch(e.target.value)} /></label><br />
+          <label>Category ID: <input type="text" value={prodCategoryId} onChange={(e) => setProdCategoryId(e.target.value)} /></label><br />
+          <label>Min Price: <input type="number" value={prodMinPrice} onChange={(e) => setProdMinPrice(e.target.value)} /></label><br />
+          <label>Max Price: <input type="number" value={prodMaxPrice} onChange={(e) => setProdMaxPrice(e.target.value)} /></label><br />
+          <label>Sort By:
+            <select value={prodSortBy} onChange={(e) => setProdSortBy(e.target.value)}>
+              <option value="createdAt">Created At</option>
+              <option value="price">Price</option>
+              <option value="name">Name</option>
+            </select>
+          </label><br />
+          <label>Sort Order:
+            <select value={prodSortOrder} onChange={(e) => setProdSortOrder(e.target.value)}>
+              <option value="desc">DESC</option>
+              <option value="asc">ASC</option>
+            </select>
+          </label><br />
+          <button type="submit">Apply Filters</button>
+        </form>
+
+        <p>{prodMessage}</p>
+
+        <table border="1">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Price</th>
+              <th>Category ID</th>
+              <th>Created At</th>
+            </tr>
+          </thead>
+          <tbody>
+            {products.map((p) => (
+              <tr key={p.id}>
+                <td>{p.id}</td>
+                <td>{p.name}</td>
+                <td>{p.price}</td>
+                <td>{p.categoryId}</td>
+                <td>{new Date(p.createdAt).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {prodMeta && (
+          <div style={{ marginTop: '10px' }}>
+            <p>
+              Total Items: {prodMeta.total} | Page {prodMeta.page} of {prodMeta.totalPages} | Limit: {prodMeta.limit}
+            </p>
+            <button onClick={handlePrevPage} disabled={prodMeta.page <= 1}>Previous</button>
+            <button onClick={handleNextPage} disabled={prodMeta.page >= prodMeta.totalPages}>Next</button>
+          </div>
+        )}
+      </section>
+
     </div>
   );
 }
