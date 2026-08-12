@@ -36,3 +36,17 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
     });
   }
 };
+
+export const authorizeRoles = (...roles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      res.status(403).json({
+        success: false,
+        message: `Access denied. Required role: ${roles.join(', ')}`,
+        data: {}
+      });
+      return;
+    }
+    next();
+  };
+};
