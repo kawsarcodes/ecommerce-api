@@ -43,6 +43,7 @@ function App() {
   const [prodMessage, setProdMessage] = useState('');
   const [prodMessageType, setProdMessageType] = useState('');
   const [isProductsLoading, setIsProductsLoading] = useState(false);
+  const [showDeletedProducts, setShowDeletedProducts] = useState(false);
 
   // Product Query State
   const [prodSearch, setProdSearch] = useState('');
@@ -162,6 +163,10 @@ function App() {
       params.append('page', pageToFetch);
       params.append('limit', prodLimit);
 
+      if (showDeletedProducts) {
+        params.append('includeDeleted', 'true');
+      }
+
       const res = await fetch(`${API_BASE}/products?${params.toString()}`);
       const data = await res.json();
 
@@ -170,7 +175,8 @@ function App() {
         setProdMeta(data.meta);
         setProdPage(data.meta?.page || 1);
         setProdMessageType('success');
-        setProdMessage(`Products fetched successfully. Found ${data.meta?.total || 0} items.`);
+        const deletedCount = data.data?.filter(p => p.isDeleted).length || 0;
+        setProdMessage(`Products fetched successfully. Found ${data.meta?.total || 0} items${deletedCount > 0 ? ` (${deletedCount} deleted)` : ''}`);
       } else {
         setProdMessageType('error');
         setProdMessage(`Error fetching products: ${getErrorMessage(data)}`);
@@ -181,7 +187,7 @@ function App() {
     } finally {
       setIsProductsLoading(false);
     }
-  }, [prodSearch, prodCategoryId, prodMinPrice, prodMaxPrice, prodSortBy, prodSortOrder, prodLimit]);
+  }, [prodSearch, prodCategoryId, prodMinPrice, prodMaxPrice, prodSortBy, prodSortOrder, prodLimit, showDeletedProducts]);
 
   // Fetch Product Detail
   const fetchProductDetail = async (productId) => {
@@ -393,6 +399,37 @@ function App() {
       } else {
         setProdMessageType('error');
         setProdMessage(`Failed to delete product: ${getErrorMessage(data)}`);
+      }
+    } catch (err) {
+      setProdMessageType('error');
+      setProdMessage(`Error: ${err.message}`);
+    }
+  };
+
+  // Restore Product
+  const handleRestoreProduct = async (productId) => {
+    if (!window.confirm('Are you sure you want to restore this product?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/products/${productId}/restore`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setProdMessageType('success');
+        setProdMessage('Product restored successfully!');
+        await fetchProducts(prodPage);
+      } else {
+        setProdMessageType('error');
+        setProdMessage(`Failed to restore product: ${getErrorMessage(data)}`);
       }
     } catch (err) {
       setProdMessageType('error');
@@ -972,44 +1009,42 @@ function App() {
       {/* Categories Section - visible when logged in */}
       {token && (
         <section>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold">Categories</h2>
-            {userRole === 'ADMIN' && (
-              <div className="flex items-center gap-3">
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-semibold leading-none">Categories</h2>
+              {userRole === 'ADMIN' && (
+                <label className="flex items-center gap-2 text-sm cursor-pointer whitespace-nowrap select-none">
                   <input
                     type="checkbox"
-                    checked={showDeletedUsers}
-                    onChange={(e) => {
-                      setShowDeletedUsers(e.target.checked);
-                    }}
-                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    checked={showDeletedCategories}
+                    onChange={(e) => setShowDeletedCategories(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                   />
-                  Show Deleted Users
+                  <span className="leading-none text-gray-700">Show Deleted</span>
                 </label>
-              </div>
+              )}
+            </div>
+
+            {userRole === 'ADMIN' && (
+              <form onSubmit={handleAddCategory} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Category Name"
+                  value={catName}
+                  onChange={(e) => setCatName(e.target.value)}
+                  required
+                  className="p-2 w-48 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+                <button
+                  type="submit"
+                  disabled={isCategoryLoading}
+                  className="px-4 py-2 bg-[#28a745] text-white text-sm border-none rounded cursor-pointer hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  {isCategoryLoading ? 'Adding...' : '+ Add Category'}
+                </button>
+              </form>
             )}
           </div>
-
-          {userRole === 'ADMIN' && (
-            <form onSubmit={handleAddCategory} className="mb-2.5 flex flex-wrap gap-2">
-              <input
-                type="text"
-                placeholder="Category Name"
-                value={catName}
-                onChange={(e) => setCatName(e.target.value)}
-                required
-                className="p-2 w-48 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                type="submit"
-                disabled={isCategoryLoading}
-                className="px-4 py-2 bg-[#28a745] text-white border-none rounded cursor-pointer hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isCategoryLoading ? 'Adding...' : '+ Add Category'}
-              </button>
-            </form>
-          )}
 
           {renderMessage(catMessage, catMessageType)}
 
@@ -1085,12 +1120,26 @@ function App() {
 
       {/* Products Section */}
       <section>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold">Products</h2>
+        <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-semibold leading-none">Products</h2>
+            {userRole === 'ADMIN' && (
+              <label className="flex items-center gap-2 text-sm cursor-pointer whitespace-nowrap select-none">
+                <input
+                  type="checkbox"
+                  checked={showDeletedProducts}
+                  onChange={(e) => setShowDeletedProducts(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                />
+                <span className="leading-none text-gray-700">Show Deleted</span>
+              </label>
+            )}
+          </div>
+
           {userRole === 'ADMIN' && (
             <button
               onClick={() => setShowAddProduct(true)}
-              className="px-4 py-2 bg-[#28a745] text-white rounded hover:bg-emerald-600 transition-colors"
+              className="px-4 py-2 bg-[#28a745] text-white text-sm rounded hover:bg-emerald-600 transition-colors whitespace-nowrap"
             >
               + Add New Product
             </button>
@@ -1187,6 +1236,7 @@ function App() {
                 <th className="p-2 text-left border border-gray-300">Name</th>
                 <th className="p-2 text-left border border-gray-300">Price</th>
                 <th className="p-2 text-left border border-gray-300">Category ID</th>
+                <th className="p-2 text-left border border-gray-300">Status</th>
                 <th className="p-2 text-left border border-gray-300">Created At</th>
                 {userRole === 'ADMIN' && (
                   <th className="p-2 text-left border border-gray-300">Actions</th>
@@ -1196,7 +1246,7 @@ function App() {
             <tbody>
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan={userRole === 'ADMIN' ? 6 : 5} className="p-2 text-center border border-gray-300">
+                  <td colSpan={userRole === 'ADMIN' ? 7 : 6} className="p-2 text-center border border-gray-300">
                     No products found
                   </td>
                 </tr>
@@ -1204,42 +1254,62 @@ function App() {
                 products.map((p) => (
                   <tr
                     key={p.id}
-                    className="hover:bg-gray-50 transition-colors"
+                    className={`hover:bg-gray-50 transition-colors ${p.isDeleted ? 'bg-gray-100 opacity-70' : ''}`}
                   >
                     <td className="p-2 border border-gray-300">{p.id}</td>
                     <td
-                      className="p-2 border border-gray-300 cursor-pointer text-blue-600 hover:underline"
-                      onClick={() => fetchProductDetail(p.id)}
+                      className={`p-2 border border-gray-300 cursor-pointer ${p.isDeleted ? 'line-through text-gray-500' : 'text-blue-600 hover:underline'}`}
+                      onClick={() => !p.isDeleted && fetchProductDetail(p.id)}
                     >
                       {p.name}
                     </td>
                     <td className="p-2 border border-gray-300">${parseFloat(p.price).toFixed(2)}</td>
                     <td className="p-2 border border-gray-300">{p.categoryId || 'N/A'}</td>
                     <td className="p-2 border border-gray-300">
+                      <span className={`px-2 py-1 rounded-[3px] text-xs font-medium ${p.isDeleted
+                        ? 'bg-red-100 text-red-700 border border-red-200'
+                        : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                        }`}>
+                        {p.isDeleted ? 'Deleted' : 'Active'}
+                      </span>
+                    </td>
+                    <td className="p-2 border border-gray-300">
                       {p.createdAt ? new Date(p.createdAt).toLocaleString() : 'N/A'}
                     </td>
                     {userRole === 'ADMIN' && (
                       <td className="p-2 border border-gray-300">
-                        <div className="flex items-center gap-1.5">
+                        {p.isDeleted ? (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              openEditProduct(p);
+                              handleRestoreProduct(p.id);
                             }}
-                            className="px-2.5 py-1 text-xs rounded-[3px] font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors"
+                            className="px-2.5 py-1 text-xs rounded-[3px] font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors"
                           >
-                            Edit
+                            Restore
                           </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteProduct(p.id);
-                            }}
-                            className="px-2.5 py-1 text-xs rounded-[3px] font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors"
-                          >
-                            Delete
-                          </button>
-                        </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditProduct(p);
+                              }}
+                              className="px-2.5 py-1 text-xs rounded-[3px] font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteProduct(p.id);
+                              }}
+                              className="px-2.5 py-1 text-xs rounded-[3px] font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
                       </td>
                     )}
                   </tr>
@@ -1312,18 +1382,12 @@ function App() {
                       checked={showDeletedUsers}
                       onChange={(e) => {
                         setShowDeletedUsers(e.target.checked);
-                        fetchUsers(); // Fetch immediately when toggled
+                        fetchUsers();
                       }}
                       className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                     />
                     Show Deleted Users
                   </label>
-
-                  {showDeletedUsers && (
-                    <span className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded border border-amber-200">
-                      Deleted users are shown in gray
-                    </span>
-                  )}
                 </div>
 
                 {renderMessage(userMessage, userMessageType)}
