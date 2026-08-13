@@ -8,14 +8,17 @@ const createUser = async (payload: any) => {
   return userWithoutPassword;
 };
 
-const getAllUsers = async () => {
+const getAllUsers = async (includeDeleted?: boolean) => {
+  const whereCondition = includeDeleted ? {} : { isDeleted: false };
+
   const users = await prisma.user.findMany({
-    where: { isDeleted: false },
+    where: whereCondition,
     select: {
       id: true,
       email: true,
       name: true,
       role: true,
+      isDeleted: true,
       createdAt: true,
       updatedAt: true,
     }
@@ -31,6 +34,7 @@ const getUserById = async (id: string) => {
       email: true,
       name: true,
       role: true,
+      isDeleted: true,
       createdAt: true,
       updatedAt: true,
     }
@@ -50,6 +54,7 @@ const updateUser = async (id: string, payload: any) => {
       email: true,
       name: true,
       role: true,
+      isDeleted: true,
       createdAt: true,
       updatedAt: true,
     }
@@ -66,9 +71,43 @@ const deleteUser = async (id: string) => {
       email: true,
       name: true,
       role: true,
+      isDeleted: true,
     }
   });
   return user;
+};
+
+const restoreUser = async (id: string) => {
+  const user = await prisma.user.update({
+    where: { id },
+    data: { isDeleted: false },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      isDeleted: true,
+      createdAt: true,
+      updatedAt: true,
+    }
+  });
+  return user;
+};
+
+const getDeletedUsers = async () => {
+  const users = await prisma.user.findMany({
+    where: { isDeleted: true },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      isDeleted: true,
+      createdAt: true,
+      updatedAt: true,
+    }
+  });
+  return users;
 };
 
 export const UserService = {
@@ -77,4 +116,6 @@ export const UserService = {
   getUserById,
   updateUser,
   deleteUser,
+  restoreUser,
+  getDeletedUsers,
 };

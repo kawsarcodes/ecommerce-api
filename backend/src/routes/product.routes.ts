@@ -10,6 +10,7 @@ router.post('/', authenticate, authorizeRoles('ADMIN'), validate(createProductSc
 router.get('/', ProductController.getAllProducts);
 router.get('/:id', ProductController.getProductById);
 router.patch('/:id', authenticate, authorizeRoles('ADMIN'), validate(updateProductSchema), ProductController.updateProduct);
+router.patch('/:id/restore', authenticate, authorizeRoles('ADMIN'), ProductController.restoreProduct);
 router.delete('/:id', authenticate, authorizeRoles('ADMIN'), ProductController.deleteProduct);
 
 export default router;
