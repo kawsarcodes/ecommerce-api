@@ -8,13 +8,27 @@ const createProduct = async (payload: any) => {
 };
 
 const getAllProducts = async (query: any = {}) => {
-  const { search, categoryId, minPrice, maxPrice, sortBy = 'createdAt', sortOrder = 'desc', page = 1, limit = 10 } = query;
+  const {
+    search,
+    categoryId,
+    minPrice,
+    maxPrice,
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
+    page = 1,
+    limit = 10,
+    includeDeleted = false
+  } = query;
 
   const pageNumber = Number(page);
   const limitNumber = Number(limit);
   const skip = (pageNumber - 1) * limitNumber;
 
-  const whereConditions: any = { isDeleted: false };
+  const whereConditions: any = {};
+
+  if (!includeDeleted) {
+    whereConditions.isDeleted = false;
+  }
 
   if (search) {
     whereConditions.OR = [
@@ -78,7 +92,17 @@ const getProductById = async (id: string) => {
           email: true,
         }
       },
-      reviews: true,
+      reviews: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            }
+          }
+        }
+      }
     }
   });
   if (!product) {
@@ -103,10 +127,19 @@ const deleteProduct = async (id: string) => {
   return product;
 };
 
+const restoreProduct = async (id: string) => {
+  const product = await prisma.product.update({
+    where: { id },
+    data: { isDeleted: false },
+  });
+  return product;
+};
+
 export const ProductService = {
   createProduct,
   getAllProducts,
   getProductById,
   updateProduct,
   deleteProduct,
+  restoreProduct,
 };

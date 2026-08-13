@@ -7,9 +7,11 @@ const createCategory = async (payload: any) => {
   return category;
 };
 
-const getAllCategories = async () => {
+const getAllCategories = async (includeDeleted?: boolean) => {
+  const whereCondition = includeDeleted ? {} : { isDeleted: false };
+
   const categories = await prisma.category.findMany({
-    where: { isDeleted: false },
+    where: whereCondition,
   });
   return categories;
 };
@@ -40,10 +42,19 @@ const deleteCategory = async (id: string) => {
   return category;
 };
 
+const restoreCategory = async (id: string) => {
+  const category = await prisma.category.update({
+    where: { id },
+    data: { isDeleted: false },
+  });
+  return category;
+};
+
 export const CategoryService = {
   createCategory,
   getAllCategories,
   getCategoryById,
   updateCategory,
   deleteCategory,
+  restoreCategory,
 };

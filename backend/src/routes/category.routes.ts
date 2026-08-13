@@ -8,6 +8,7 @@ router.post('/', authenticate, authorizeRoles('ADMIN'), CategoryController.creat
 router.get('/', CategoryController.getAllCategories);
 router.get('/:id', CategoryController.getCategoryById);
 router.patch('/:id', authenticate, authorizeRoles('ADMIN'), CategoryController.updateCategory);
+router.patch('/:id/restore', authenticate, authorizeRoles('ADMIN'), CategoryController.restoreCategory);
 router.delete('/:id', authenticate, authorizeRoles('ADMIN'), CategoryController.deleteCategory);
 
 export default router;
