@@ -333,37 +333,28 @@ function App() {
   const renderMessage = (message, type) => {
     if (!message) return null;
 
-    const style = {
-      padding: '10px',
+    const baseClasses = "p-3 my-3 border rounded";
+    const typeClasses = type === 'success'
+      ? 'text-emerald-800 bg-emerald-50 border-emerald-200'
+      : 'text-rose-800 bg-rose-50 border-rose-200';
 
-      margin: '10px 0',
-      color: type === 'success' ? '#155724' : '#721c24',
-      backgroundColor: type === 'success' ? '#d4edda' : '#f8d7da',
-      border: `1px solid ${type === 'success' ? '#c3e6cb' : '#f5c6cb'}`
-    };
-
-    return <div style={style}>{message}</div>;
+    return <div className={`${baseClasses} ${typeClasses}`}>{message}</div>;
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h1 style={{ color: '#333', borderBottom: '2px solid #007bff', paddingBottom: '10px' }}>
-        Express & Prisma REST API Test Console
+    <div className="max-w-6xl mx-auto p-5 font-sans">
+      <h1 className="text-3xl font-bold text-black-800 border-b-2 border-black-500 pb-2.5">
+        Express & Prisma REST API
       </h1>
-      <p style={{ color: '#666', fontSize: '1.1em' }}>
+      <p className="text-black-600 text-base mb-5">
         A testing interface to verify end to end backend integration.
         It demonstrates JWT authentication, Prisma ORM operations, and live PostgreSQL database queries.
       </p>
 
       {/* Authentication Status */}
-      <section style={{
-        background: token ? '#d4edda' : '#f8d7da',
-        padding: '15px',
-        borderRadius: '2px',
-        marginBottom: '20px'
-      }}>
-        <h2>Authentication Status</h2>
-        <p>
+      <section className={`p-4 rounded mb-5 border ${token ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}`}>
+        <h2 className="text-xl font-semibold mb-2">Authentication Status</h2>
+        <p className="mb-3">
           <strong>Status:</strong> {token ? 'Logged In' : 'Not Logged In'}
           {token && userEmail && (
             <>
@@ -373,7 +364,7 @@ function App() {
               <br />
               <strong>Role:</strong> {userRole}
               {userRole === 'USER' && (
-                <span style={{ marginLeft: '10px', fontSize: '0.9em', color: '#6c757d', fontStyle: 'italic' }}>
+                <span className="ml-2.5 text-sm text-gray-600 italic">
                   Logged in as Regular User (Read-Only Actions)
                 </span>
               )}
@@ -383,78 +374,53 @@ function App() {
         {token && (
           <button
             onClick={handleLogout}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '2px',
-              cursor: 'pointer'
-            }}
+            className="px-4 py-2 bg-[#dc3545] text-white border-none rounded cursor-pointer hover:bg-rose-600 transition-colors"
           >
             Logout
           </button>
         )}
       </section>
 
-      <hr style={{ margin: '30px 0' }} />
+      <hr className="my-7 border-gray-300" />
 
       {/* Login and Registration*/}
       <section>
-        <h2 style={{ marginBottom: '20px' }}>Authentication</h2>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '30px',
-          marginBottom: '20px'
-        }}>
-          {/* Login Section*/}
-          <div style={{
-            padding: '20px',
-            borderRadius: '2px',
-            border: '1px solid #dee2e6'
-          }}>
-            <h3 style={{ marginTop: 0 }}>Login</h3>
+        <h2 className="text-2xl font-semibold mb-5">Authentication</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-7 mb-5">
+          {/* Login*/}
+          <div className="p-5 rounded border border-gray-300">
+            <h3 className="text-xl font-semibold mt-0 mb-4">Login</h3>
             <form onSubmit={handleLogin}>
-              <div style={{ marginBottom: '10px' }}>
+              <div className="mb-2.5">
                 <input
                   type="email"
                   placeholder="Email"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   required
-                  style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}
+                  className="p-2 w-full box-border border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <div style={{ marginBottom: '10px' }}>
+              <div className="mb-2.5">
                 <input
                   type="password"
                   placeholder="Password"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   required
-                  style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}
+                  className="p-2 w-full box-border border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <div style={{ marginBottom: '10px', display: 'flex', gap: '10px' }}>
+              <div className="mb-2.5 flex gap-2.5">
                 <button
                   type="button"
                   onClick={() => {
                     setLoginEmail('admin@test.dev');
                     setLoginPassword('admin123');
                   }}
-                  style={{
-                    flex: 1,
-                    padding: '6px',
-                    backgroundColor: '#6c757d',
-                    color: 'white',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '0.85em',
-                    borderRadius: '2px',
-                  }}
+                  className="flex-1 py-1.5 bg-gray-500 text-white border-none cursor-pointer text-sm rounded hover:bg-gray-600 transition-colors"
                 >
-                  Demo Admin
+                  Admin
                 </button>
                 <button
                   type="button"
@@ -462,32 +428,15 @@ function App() {
                     setLoginEmail('user@test.dev');
                     setLoginPassword('user123');
                   }}
-                  style={{
-                    flex: 1,
-                    padding: '6px',
-                    backgroundColor: '#6c757d',
-                    color: 'white',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '0.85em',
-                    borderRadius: '2px',
-                  }}
+                  className="flex-1 py-1.5 bg-gray-500 text-white border-none cursor-pointer text-sm rounded hover:bg-gray-600 transition-colors"
                 >
-                  Demo User
+                  User
                 </button>
               </div>
               <button
                 type="submit"
                 disabled={isLoading}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#28a745',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '2px',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  width: '100%'
-                }}
+                className="w-full py-2 px-4 bg-[#28a745] text-white border-none rounded cursor-pointer hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Logging in...' : 'Login'}
               </button>
@@ -496,34 +445,30 @@ function App() {
           </div>
 
           {/* Registration */}
-          <div style={{
-            padding: '20px',
-            borderRadius: '2px',
-            border: '1px solid #dee2e6'
-          }}>
-            <h3 style={{ marginTop: 0 }}>Register</h3>
+          <div className="p-5 rounded border border-gray-300">
+            <h3 className="text-xl font-semibold mt-0 mb-4">Register</h3>
             <form onSubmit={handleRegister}>
-              <div style={{ marginBottom: '10px' }}>
+              <div className="mb-2.5">
                 <input
                   type="text"
                   placeholder="Full Name"
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
                   required
-                  style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}
+                  className="p-2 w-full box-border border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <div style={{ marginBottom: '10px' }}>
+              <div className="mb-2.5">
                 <input
                   type="email"
                   placeholder="Email"
                   value={regEmail}
                   onChange={(e) => setRegEmail(e.target.value)}
                   required
-                  style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}
+                  className="p-2 w-full box-border border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <div style={{ marginBottom: '10px' }}>
+              <div className="mb-2.5">
                 <input
                   type="password"
                   placeholder="Password (min 6 characters)"
@@ -531,21 +476,13 @@ function App() {
                   onChange={(e) => setRegPassword(e.target.value)}
                   required
                   minLength="6"
-                  style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }}
+                  className="p-2 w-full box-border border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <button
                 type="submit"
                 disabled={isLoading}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#007bff',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '2px',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  width: '100%'
-                }}
+                className="w-full py-2 px-4 bg-blue-500 text-white border-none rounded cursor-pointer hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Registering...' : 'Register'}
               </button>
@@ -555,33 +492,26 @@ function App() {
         </div>
       </section>
 
-      <hr style={{ margin: '30px 0' }} />
+      <hr className="my-7 border-gray-300" />
 
       {/* Categories Section - visible when logged in */}
       {token && (
         <section>
-          <h2>Categories</h2>
+          <h2 className="text-2xl font-semibold mb-4">Categories</h2>
           {userRole === 'ADMIN' && (
-            <form onSubmit={handleAddCategory} style={{ marginBottom: '10px' }}>
+            <form onSubmit={handleAddCategory} className="mb-2.5 flex flex-wrap gap-2">
               <input
                 type="text"
                 placeholder="Category Name"
                 value={catName}
                 onChange={(e) => setCatName(e.target.value)}
                 required
-                style={{ padding: '8px', marginRight: '10px', width: '200px' }}
+                className="p-2 w-48 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <button
                 type="submit"
                 disabled={isCategoryLoading}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#28a745',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '2px',
-                  cursor: isCategoryLoading ? 'not-allowed' : 'pointer'
-                }}
+                className="px-4 py-2 bg-[#28a745] text-white border-none rounded cursor-pointer hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isCategoryLoading ? 'Adding...' : 'Add Category'}
               </button>
@@ -590,127 +520,117 @@ function App() {
 
           {renderMessage(catMessage, catMessageType)}
 
-          {isCategoryLoading && !catMessage && <p>Loading categories...</p>}
+          {isCategoryLoading && !catMessage && <p className="text-gray-600">Loading categories...</p>}
 
-          <table border="1" style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f8f9fa' }}>
-                <th style={{ padding: '8px', textAlign: 'left' }}>ID</th>
-                <th style={{ padding: '8px', textAlign: 'left' }}>Name</th>
-                <th style={{ padding: '8px', textAlign: 'left' }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categories.length === 0 ? (
-                <tr>
-                  <td colSpan="3" style={{ padding: '8px', textAlign: 'center' }}>
-                    No categories found
-                  </td>
+          <div className="overflow-x-auto mt-2.5">
+            <table className="w-full border-collapse border border-gray-300">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="p-2 text-left border border-gray-300">ID</th>
+                  <th className="p-2 text-left border border-gray-300">Name</th>
+                  <th className="p-2 text-left border border-gray-300">Action</th>
                 </tr>
-              ) : (
-                categories.map((cat) => (
-                  <tr key={cat.id}>
-                    <td style={{ padding: '8px' }}>{cat.id}</td>
-                    <td style={{ padding: '8px' }}>{cat.name}</td>
-                    <td style={{ padding: '8px' }}>
-                      {userRole === 'ADMIN' && (
-                        <button
-                          onClick={() => handleDeleteCategory(cat.id)}
-                          disabled={isCategoryLoading}
-                          style={{
-                            padding: '4px 12px',
-                            backgroundColor: '#dc3545',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '2px',
-                            cursor: isCategoryLoading ? 'not-allowed' : 'pointer'
-                          }}
-                        >
-                          Delete
-                        </button>
-                      )}
+              </thead>
+              <tbody>
+                {categories.length === 0 ? (
+                  <tr>
+                    <td colSpan="3" className="p-2 text-center border border-gray-300">
+                      No categories found
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  categories.map((cat) => (
+                    <tr key={cat.id}>
+                      <td className="p-2 border border-gray-300">{cat.id}</td>
+                      <td className="p-2 border border-gray-300">{cat.name}</td>
+                      <td className="p-2 border border-gray-300">
+                        {userRole === 'ADMIN' && (
+                          <button
+                            onClick={() => handleDeleteCategory(cat.id)}
+                            disabled={isCategoryLoading}
+                            className="px-3 py-1 bg-[#dc3545] text-white border-none rounded cursor-pointer hover:bg-rose-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </section>
       )}
 
-      <hr style={{ margin: '30px 0' }} />
+      <hr className="my-7 border-gray-300" />
 
       {/* Products Section */}
       <section>
-        <h2>Products</h2>
+        <h2 className="text-2xl font-semibold mb-4">Products</h2>
 
-        <form onSubmit={handleApplyFilters} style={{
-          background: '#f8f9fa',
-          padding: '15px',
-
-          marginBottom: '15px'
-        }}>
-          <div style={{ marginBottom: '10px' }}>
-            <label>
+        <form onSubmit={handleApplyFilters} className="bg-gray-100 p-4 rounded mb-4">
+          <div className="mb-2.5">
+            <label className="font-medium">
               Search:
               <input
                 type="text"
                 value={prodSearch}
                 onChange={(e) => setProdSearch(e.target.value)}
-                style={{ marginLeft: '10px', padding: '8px', width: '200px' }}
+                className="ml-2.5 p-2 w-48 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </label>
           </div>
-          <div style={{ marginBottom: '10px' }}>
-            <label>
+          <div className="mb-2.5">
+            <label className="font-medium">
               Category ID:
               <input
                 type="text"
                 value={prodCategoryId}
                 onChange={(e) => setProdCategoryId(e.target.value)}
-                style={{ marginLeft: '10px', padding: '8px', width: '200px' }}
+                className="ml-2.5 p-2 w-48 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </label>
           </div>
-          <div style={{ marginBottom: '10px' }}>
-            <label>
+          <div className="mb-2.5">
+            <label className="font-medium">
               Min Price:
               <input
                 type="number"
                 value={prodMinPrice}
                 onChange={(e) => setProdMinPrice(e.target.value)}
-                style={{ marginLeft: '10px', padding: '8px', width: '150px' }}
+                className="ml-2.5 p-2 w-36 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </label>
-            <label style={{ marginLeft: '20px' }}>
+            <label className="ml-5 font-medium">
               Max Price:
               <input
                 type="number"
                 value={prodMaxPrice}
                 onChange={(e) => setProdMaxPrice(e.target.value)}
-                style={{ marginLeft: '10px', padding: '8px', width: '150px' }}
+                className="ml-2.5 p-2 w-36 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </label>
           </div>
-          <div style={{ marginBottom: '10px' }}>
-            <label>
+          <div className="mb-2.5">
+            <label className="font-medium">
               Sort By:
               <select
                 value={prodSortBy}
                 onChange={(e) => setProdSortBy(e.target.value)}
-                style={{ marginLeft: '10px', padding: '8px' }}
+                className="ml-2.5 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="createdAt">Created At</option>
                 <option value="price">Price</option>
                 <option value="name">Name</option>
               </select>
             </label>
-            <label style={{ marginLeft: '20px' }}>
+            <label className="ml-5 font-medium">
               Sort Order:
               <select
                 value={prodSortOrder}
                 onChange={(e) => setProdSortOrder(e.target.value)}
-                style={{ marginLeft: '10px', padding: '8px' }}
+                className="ml-2.5 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="desc">DESC</option>
                 <option value="asc">ASC</option>
@@ -720,14 +640,7 @@ function App() {
           <button
             type="submit"
             disabled={isProductsLoading}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '2px',
-              cursor: isProductsLoading ? 'not-allowed' : 'pointer'
-            }}
+            className="px-4 py-2 bg-blue-500 text-white border-none rounded cursor-pointer hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isProductsLoading ? 'Loading...' : 'Apply Filters'}
           </button>
@@ -735,85 +648,62 @@ function App() {
 
         {renderMessage(prodMessage, prodMessageType)}
 
-        {isProductsLoading && !prodMessage && <p>Loading products...</p>}
+        {isProductsLoading && !prodMessage && <p className="text-gray-600">Loading products...</p>}
 
-        <table border="1" style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f8f9fa' }}>
-              <th style={{ padding: '8px', textAlign: 'left' }}>ID</th>
-              <th style={{ padding: '8px', textAlign: 'left' }}>Name</th>
-              <th style={{ padding: '8px', textAlign: 'left' }}>Price</th>
-              <th style={{ padding: '8px', textAlign: 'left' }}>Category ID</th>
-              <th style={{ padding: '8px', textAlign: 'left' }}>Created At</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.length === 0 ? (
-              <tr>
-                <td colSpan="5" style={{ padding: '8px', textAlign: 'center' }}>
-                  No products found
-                </td>
+        <div className="overflow-x-auto mt-2.5">
+          <table className="w-full border-collapse border border-gray-300">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="p-2 text-left border border-gray-300">ID</th>
+                <th className="p-2 text-left border border-gray-300">Name</th>
+                <th className="p-2 text-left border border-gray-300">Price</th>
+                <th className="p-2 text-left border border-gray-300">Category ID</th>
+                <th className="p-2 text-left border border-gray-300">Created At</th>
               </tr>
-            ) : (
-              products.map((p) => (
-                <tr key={p.id}>
-                  <td style={{ padding: '8px' }}>{p.id}</td>
-                  <td style={{ padding: '8px' }}>{p.name}</td>
-                  <td style={{ padding: '8px' }}>${parseFloat(p.price).toFixed(2)}</td>
-                  <td style={{ padding: '8px' }}>{p.categoryId || 'N/A'}</td>
-                  <td style={{ padding: '8px' }}>
-                    {p.createdAt ? new Date(p.createdAt).toLocaleString() : 'N/A'}
+            </thead>
+            <tbody>
+              {products.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="p-2 text-center border border-gray-300">
+                    No products found
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                products.map((p) => (
+                  <tr key={p.id}>
+                    <td className="p-2 border border-gray-300">{p.id}</td>
+                    <td className="p-2 border border-gray-300">{p.name}</td>
+                    <td className="p-2 border border-gray-300">${parseFloat(p.price).toFixed(2)}</td>
+                    <td className="p-2 border border-gray-300">{p.categoryId || 'N/A'}</td>
+                    <td className="p-2 border border-gray-300">
+                      {p.createdAt ? new Date(p.createdAt).toLocaleString() : 'N/A'}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {prodMeta && products.length > 0 && (
-          <div style={{
-            marginTop: '15px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '10px',
-            background: '#f8f9fa',
-            borderRadius: '4px'
-          }}>
-            <p style={{ margin: 0 }}>
+          <div className="mt-4 flex flex-wrap justify-between items-center p-2.5 bg-gray-100 rounded">
+            <p className="m-0">
               <strong>Total Items:</strong> {prodMeta.total} |
               <strong> Page:</strong> {prodMeta.page} of {prodMeta.totalPages} |
               <strong> Limit:</strong> {prodMeta.limit}
             </p>
-            <div>
+            <div className="flex gap-2">
               <button
                 onClick={handlePrevPage}
                 disabled={prodMeta.page <= 1 || isProductsLoading}
-                style={{
-                  padding: '6px 12px',
-                  marginRight: '10px',
-                  backgroundColor: '#6c757d',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '2px',
-                  cursor: (prodMeta.page <= 1 || isProductsLoading) ? 'not-allowed' : 'pointer',
-                  opacity: (prodMeta.page <= 1 || isProductsLoading) ? 0.6 : 1
-                }}
+                className="px-3 py-1.5 bg-gray-500 text-white border-none rounded cursor-pointer hover:bg-gray-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
               <button
                 onClick={handleNextPage}
                 disabled={prodMeta.page >= prodMeta.totalPages || isProductsLoading}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: '#007bff',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '2px',
-                  cursor: (prodMeta.page >= prodMeta.totalPages || isProductsLoading) ? 'not-allowed' : 'pointer',
-                  opacity: (prodMeta.page >= prodMeta.totalPages || isProductsLoading) ? 0.6 : 1
-                }}
+                className="px-3 py-1.5 bg-blue-500 text-white border-none rounded cursor-pointer hover:bg-blue-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Next
               </button>
