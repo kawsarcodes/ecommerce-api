@@ -67,6 +67,20 @@ function App() {
   const [reviewMessageType, setReviewMessageType] = useState('');
   const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
 
+  // Product Management States
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [showEditProduct, setShowEditProduct] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [newProduct, setNewProduct] = useState({
+    name: '',
+    description: '',
+    price: '',
+    categoryId: ''
+  });
+  const [productFormMessage, setProductFormMessage] = useState('');
+  const [productFormMessageType, setProductFormMessageType] = useState('');
+  const [isProductFormSubmitting, setIsProductFormSubmitting] = useState(false);
+
   // Clear messages helper
   const clearMessages = () => {
     setRegMessage('');
@@ -74,6 +88,7 @@ function App() {
     setCatMessage('');
     setProdMessage('');
     setReviewMessage('');
+    setProductFormMessage('');
   };
 
   // Fetch Categories
@@ -247,6 +262,132 @@ function App() {
       setReviewMessageType('error');
       setReviewMessage(`Error: ${err.message}`);
     }
+  };
+
+  // Create Product
+  const handleCreateProduct = async (e) => {
+    e.preventDefault();
+    setIsProductFormSubmitting(true);
+    setProductFormMessage('');
+
+    try {
+      const res = await fetch(`${API_BASE}/products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: newProduct.name.trim(),
+          description: newProduct.description.trim(),
+          price: parseFloat(newProduct.price),
+          categoryId: newProduct.categoryId
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setProductFormMessageType('success');
+        setProductFormMessage('Product created successfully!');
+        setNewProduct({ name: '', description: '', price: '', categoryId: '' });
+        setShowAddProduct(false);
+        await fetchProducts(prodPage);
+      } else {
+        setProductFormMessageType('error');
+        setProductFormMessage(`Failed to create product: ${getErrorMessage(data)}`);
+      }
+    } catch (err) {
+      setProductFormMessageType('error');
+      setProductFormMessage(`Error: ${err.message}`);
+    } finally {
+      setIsProductFormSubmitting(false);
+    }
+  };
+
+  // Update Product
+  const handleUpdateProduct = async (e) => {
+    e.preventDefault();
+    setIsProductFormSubmitting(true);
+    setProductFormMessage('');
+
+    try {
+      const res = await fetch(`${API_BASE}/products/${editingProduct.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: newProduct.name.trim(),
+          description: newProduct.description.trim(),
+          price: parseFloat(newProduct.price),
+          categoryId: newProduct.categoryId
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setProductFormMessageType('success');
+        setProductFormMessage('Product updated successfully!');
+        setShowEditProduct(false);
+        setEditingProduct(null);
+        setNewProduct({ name: '', description: '', price: '', categoryId: '' });
+        await fetchProducts(prodPage);
+      } else {
+        setProductFormMessageType('error');
+        setProductFormMessage(`Failed to update product: ${getErrorMessage(data)}`);
+      }
+    } catch (err) {
+      setProductFormMessageType('error');
+      setProductFormMessage(`Error: ${err.message}`);
+    } finally {
+      setIsProductFormSubmitting(false);
+    }
+  };
+
+  // Delete Product
+  const handleDeleteProduct = async (productId) => {
+    if (!window.confirm('Are you sure you want to delete this product?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setProdMessageType('success');
+        setProdMessage('Product deleted successfully!');
+        await fetchProducts(prodPage);
+      } else {
+        setProdMessageType('error');
+        setProdMessage(`Failed to delete product: ${getErrorMessage(data)}`);
+      }
+    } catch (err) {
+      setProdMessageType('error');
+      setProdMessage(`Error: ${err.message}`);
+    }
+  };
+
+  // Open Edit Product Modal
+  const openEditProduct = (product) => {
+    setEditingProduct(product);
+    setNewProduct({
+      name: product.name,
+      description: product.description || '',
+      price: product.price.toString(),
+      categoryId: product.categoryId || ''
+    });
+    setShowEditProduct(true);
   };
 
   useEffect(() => {
@@ -460,7 +601,7 @@ function App() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-5 font-sans">
+    <div className="max-w-7xl mx-auto p-5 font-sans">
       <h1 className="text-3xl font-bold text-black-800 border-b-2 border-black-500 pb-2.5">
         Express & Prisma REST API
       </h1>
@@ -631,7 +772,7 @@ function App() {
                 disabled={isCategoryLoading}
                 className="px-4 py-2 bg-[#28a745] text-white border-none rounded cursor-pointer hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isCategoryLoading ? 'Adding...' : 'Add Category'}
+                {isCategoryLoading ? 'Adding...' : '+ Add Category'}
               </button>
             </form>
           )}
@@ -666,7 +807,7 @@ function App() {
                           <button
                             onClick={() => handleDeleteCategory(cat.id)}
                             disabled={isCategoryLoading}
-                            className="px-3 py-1 bg-[#dc3545] text-white border-none rounded cursor-pointer hover:bg-rose-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-2.5 py-1 text-xs rounded-[3px] font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Delete
                           </button>
@@ -685,7 +826,17 @@ function App() {
 
       {/* Products Section */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4">Products</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-semibold">Products</h2>
+          {userRole === 'ADMIN' && (
+            <button
+              onClick={() => setShowAddProduct(true)}
+              className="px-4 py-2 bg-[#28a745] text-white rounded hover:bg-emerald-600 transition-colors"
+            >
+              + Add New Product
+            </button>
+          )}
+        </div>
 
         <form onSubmit={handleApplyFilters} className="bg-gray-100 p-4 rounded mb-4">
           <div className="mb-2.5">
@@ -769,7 +920,7 @@ function App() {
         {isProductsLoading && !prodMessage && <p className="text-gray-600">Loading products...</p>}
 
         <div className="overflow-x-auto mt-2.5">
-          <p className="text-[16px] text-black-500 my-2">* Click on any row to view product details</p>
+          <p className="text-[16px] text-black-500 my-2">* Click on product name to view product details</p>
           <table className="w-full border-collapse border border-gray-300">
             <thead>
               <tr className="bg-gray-100">
@@ -778,12 +929,15 @@ function App() {
                 <th className="p-2 text-left border border-gray-300">Price</th>
                 <th className="p-2 text-left border border-gray-300">Category ID</th>
                 <th className="p-2 text-left border border-gray-300">Created At</th>
+                {userRole === 'ADMIN' && (
+                  <th className="p-2 text-left border border-gray-300">Actions</th>
+                )}
               </tr>
             </thead>
             <tbody>
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="p-2 text-center border border-gray-300">
+                  <td colSpan={userRole === 'ADMIN' ? 6 : 5} className="p-2 text-center border border-gray-300">
                     No products found
                   </td>
                 </tr>
@@ -791,16 +945,44 @@ function App() {
                 products.map((p) => (
                   <tr
                     key={p.id}
-                    onClick={() => fetchProductDetail(p.id)}
-                    className="cursor-pointer hover:bg-gray-50 transition-colors"
+                    className="hover:bg-gray-50 transition-colors"
                   >
                     <td className="p-2 border border-gray-300">{p.id}</td>
-                    <td className="p-2 border border-gray-300">{p.name}</td>
+                    <td
+                      className="p-2 border border-gray-300 cursor-pointer text-blue-600 hover:underline"
+                      onClick={() => fetchProductDetail(p.id)}
+                    >
+                      {p.name}
+                    </td>
                     <td className="p-2 border border-gray-300">${parseFloat(p.price).toFixed(2)}</td>
                     <td className="p-2 border border-gray-300">{p.categoryId || 'N/A'}</td>
                     <td className="p-2 border border-gray-300">
                       {p.createdAt ? new Date(p.createdAt).toLocaleString() : 'N/A'}
                     </td>
+                    {userRole === 'ADMIN' && (
+                      <td className="p-2 border border-gray-300">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditProduct(p);
+                            }}
+                            className="px-2.5 py-1 text-xs rounded-[3px] font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProduct(p.id);
+                            }}
+                            className="px-2.5 py-1 text-xs rounded-[3px] font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -834,6 +1016,182 @@ function App() {
           </div>
         )}
       </section>
+
+      {/* Add Product Modal */}
+      {showAddProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h2 className="text-2xl font-bold">Add New Product</h2>
+              <button
+                onClick={() => {
+                  setShowAddProduct(false);
+                  setProductFormMessage('');
+                  setNewProduct({ name: '', description: '', price: '', categoryId: '' });
+                }}
+                className="text-gray-500 hover:text-gray-700 text-3xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleCreateProduct}>
+              <div className="mb-3">
+                <label className="block mb-1 font-medium">Product Name *</label>
+                <input
+                  type="text"
+                  value={newProduct.name}
+                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                  required
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block mb-1 font-medium">Description</label>
+                <textarea
+                  value={newProduct.description}
+                  onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows="3"
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block mb-1 font-medium">Price *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={newProduct.price}
+                  onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                  required
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block mb-1 font-medium">Category</label>
+                <select
+                  value={newProduct.categoryId}
+                  onChange={(e) => setNewProduct({ ...newProduct, categoryId: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Category</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              {renderMessage(productFormMessage, productFormMessageType)}
+              <div className="flex gap-2 mt-4">
+                <button
+                  type="submit"
+                  disabled={isProductFormSubmitting}
+                  className="flex-1 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {isProductFormSubmitting ? 'Creating...' : 'Create Product'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddProduct(false);
+                    setProductFormMessage('');
+                    setNewProduct({ name: '', description: '', price: '', categoryId: '' });
+                  }}
+                  className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Product Modal */}
+      {showEditProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[3px] max-w-md w-full p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h2 className="text-2xl font-bold">Edit Product</h2>
+              <button
+                onClick={() => {
+                  setShowEditProduct(false);
+                  setEditingProduct(null);
+                  setProductFormMessage('');
+                  setNewProduct({ name: '', description: '', price: '', categoryId: '' });
+                }}
+                className="text-gray-500 hover:text-gray-700 text-3xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleUpdateProduct}>
+              <div className="mb-3">
+                <label className="block mb-1 font-medium">Product Name *</label>
+                <input
+                  type="text"
+                  value={newProduct.name}
+                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                  required
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block mb-1 font-medium">Description</label>
+                <textarea
+                  value={newProduct.description}
+                  onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows="3"
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block mb-1 font-medium">Price *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={newProduct.price}
+                  onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                  required
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block mb-1 font-medium">Category</label>
+                <select
+                  value={newProduct.categoryId}
+                  onChange={(e) => setNewProduct({ ...newProduct, categoryId: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Category</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              {renderMessage(productFormMessage, productFormMessageType)}
+              <div className="flex gap-2 mt-4">
+                <button
+                  type="submit"
+                  disabled={isProductFormSubmitting}
+                  className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-[3px] hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {isProductFormSubmitting ? 'Updating...' : 'Update Product'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditProduct(false);
+                    setEditingProduct(null);
+                    setProductFormMessage('');
+                    setNewProduct({ name: '', description: '', price: '', categoryId: '' });
+                  }}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-[3px] hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Product Detail Loading */}
       {isProductDetailLoading && (
