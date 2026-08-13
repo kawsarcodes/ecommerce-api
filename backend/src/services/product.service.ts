@@ -78,7 +78,17 @@ const getProductById = async (id: string) => {
           email: true,
         }
       },
-      reviews: true,
+      reviews: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            }
+          }
+        }
+      }
     }
   });
   if (!product) {

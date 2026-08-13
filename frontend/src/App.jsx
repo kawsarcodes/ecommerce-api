@@ -945,7 +945,7 @@ function App() {
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold">{review.user?.name || 'Anonymous'}</span>
+                            <span className="font-semibold">{review.user?.name || review.user?.email || 'Anonymous'}</span>
                             <span className="text-yellow-500">Rating: {review.rating}/5</span>
                           </div>
                           <p className="text-gray-700 mt-2">{review.comment}</p>
