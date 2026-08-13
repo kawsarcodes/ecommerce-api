@@ -54,6 +54,12 @@ function App() {
   const [prodLimit, setProdLimit] = useState(10);
   const [prodMeta, setProdMeta] = useState(null);
 
+  // Product Detail State
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showProductDetail, setShowProductDetail] = useState(false);
+  const [productDetail, setProductDetail] = useState(null);
+  const [isProductDetailLoading, setIsProductDetailLoading] = useState(false);
+
   // Clear messages helper
   const clearMessages = () => {
     setRegMessage('');
@@ -130,6 +136,30 @@ function App() {
       setIsProductsLoading(false);
     }
   }, [prodSearch, prodCategoryId, prodMinPrice, prodMaxPrice, prodSortBy, prodSortOrder, prodLimit]);
+
+  // Fetch Product Detail
+  const fetchProductDetail = async (productId) => {
+    setIsProductDetailLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/products/${productId}`, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setProductDetail(data.data);
+        setShowProductDetail(true);
+      } else {
+        console.error('Failed to fetch product:', data.message);
+      }
+    } catch (err) {
+      console.error('Error fetching product:', err);
+    } finally {
+      setIsProductDetailLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (token) {
@@ -670,7 +700,11 @@ function App() {
                 </tr>
               ) : (
                 products.map((p) => (
-                  <tr key={p.id}>
+                  <tr
+                    key={p.id}
+                    onClick={() => fetchProductDetail(p.id)}
+                    className="cursor-pointer hover:bg-gray-50 transition-colors"
+                  >
                     <td className="p-2 border border-gray-300">{p.id}</td>
                     <td className="p-2 border border-gray-300">{p.name}</td>
                     <td className="p-2 border border-gray-300">${parseFloat(p.price).toFixed(2)}</td>
@@ -683,6 +717,8 @@ function App() {
               )}
             </tbody>
           </table>
+          {/* hint text */}
+          <p className="text-sm text-gray-500 mt-2"> Click on any row to view product details</p>
         </div>
 
         {prodMeta && products.length > 0 && (
