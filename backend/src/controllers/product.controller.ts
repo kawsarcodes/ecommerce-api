@@ -20,7 +20,10 @@ const createProduct = async (req: Request, res: Response, next: NextFunction) =>
 
 const getAllProducts = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await ProductService.getAllProducts(req.query);
+    const result = await ProductService.getAllProducts({
+      ...req.query,
+      includeDeleted: req.query.includeDeleted === 'true'
+    });
     res.status(200).json({
       success: true,
       message: 'Products fetched successfully',
@@ -71,10 +74,24 @@ const deleteProduct = async (req: Request, res: Response, next: NextFunction) =>
   }
 };
 
+const restoreProduct = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await ProductService.restoreProduct(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: 'Product restored successfully',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const ProductController = {
   createProduct,
   getAllProducts,
   getProductById,
   updateProduct,
   deleteProduct,
+  restoreProduct,
 };

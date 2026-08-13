@@ -16,7 +16,8 @@ const createCategory = async (req: Request, res: Response, next: NextFunction) =
 
 const getAllCategories = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await CategoryService.getAllCategories();
+    const includeDeleted = req.query.includeDeleted === 'true';
+    const result = await CategoryService.getAllCategories(includeDeleted);
     res.status(200).json({
       success: true,
       message: 'Categories fetched successfully',
@@ -66,10 +67,24 @@ const deleteCategory = async (req: Request, res: Response, next: NextFunction) =
   }
 };
 
+const restoreCategory = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await CategoryService.restoreCategory(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: 'Category restored successfully',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const CategoryController = {
   createCategory,
   getAllCategories,
   getCategoryById,
   updateCategory,
   deleteCategory,
+  restoreCategory,
 };
