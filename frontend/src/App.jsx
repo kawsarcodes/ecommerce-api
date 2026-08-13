@@ -36,6 +36,7 @@ function App() {
   const [catMessage, setCatMessage] = useState('');
   const [catMessageType, setCatMessageType] = useState('');
   const [isCategoryLoading, setIsCategoryLoading] = useState(false);
+  const [showDeletedCategories, setShowDeletedCategories] = useState(false);
 
   // Products State
   const [products, setProducts] = useState([]);
@@ -81,6 +82,21 @@ function App() {
   const [productFormMessageType, setProductFormMessageType] = useState('');
   const [isProductFormSubmitting, setIsProductFormSubmitting] = useState(false);
 
+  // User Management States
+  const [users, setUsers] = useState([]);
+  const [showUserManagement, setShowUserManagement] = useState(false);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [userMessage, setUserMessage] = useState('');
+  const [userMessageType, setUserMessageType] = useState('');
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [showDeletedUsers, setShowDeletedUsers] = useState(false);
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'USER'
+  });
+
   // Clear messages helper
   const clearMessages = () => {
     setRegMessage('');
@@ -89,6 +105,7 @@ function App() {
     setProdMessage('');
     setReviewMessage('');
     setProductFormMessage('');
+    setUserMessage('');
   };
 
   // Fetch Categories
@@ -99,7 +116,11 @@ function App() {
     setCatMessage('');
 
     try {
-      const res = await fetch(`${API_BASE}/categories`, {
+      const url = showDeletedCategories
+        ? `${API_BASE}/categories?includeDeleted=true`
+        : `${API_BASE}/categories`;
+
+      const res = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -111,7 +132,9 @@ function App() {
       if (data.success) {
         setCategories(data.data || []);
         setCatMessageType('success');
-        setCatMessage('Categories loaded successfully.');
+        const activeCount = data.data?.filter(c => !c.isDeleted).length || 0;
+        const deletedCount = data.data?.filter(c => c.isDeleted).length || 0;
+        setCatMessage(`Categories loaded. ${activeCount} active${deletedCount > 0 ? `, ${deletedCount} deleted` : ''}`);
       } else {
         setCatMessageType('error');
         setCatMessage(`Error fetching categories: ${getErrorMessage(data)}`);
@@ -122,7 +145,7 @@ function App() {
     } finally {
       setIsCategoryLoading(false);
     }
-  }, [token]);
+  }, [token, showDeletedCategories]);
 
   const fetchProducts = useCallback(async (pageToFetch = 1) => {
     setIsProductsLoading(true);
@@ -219,7 +242,6 @@ function App() {
         setReviewMessage('Review added successfully!');
         setReviewComment('');
         setReviewRating(5);
-        // Refresh product details to show new review
         await fetchProductDetail(productDetail.id);
       } else {
         setReviewMessageType('error');
@@ -388,6 +410,200 @@ function App() {
       categoryId: product.categoryId || ''
     });
     setShowEditProduct(true);
+  };
+
+  // Restore Category
+  const handleRestoreCategory = async (id) => {
+    if (!window.confirm('Are you sure you want to restore this category?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/categories/${id}/restore`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setCatMessageType('success');
+        setCatMessage('Category restored successfully.');
+        await fetchCategories();
+      } else {
+        setCatMessageType('error');
+        setCatMessage(`Failed to restore category: ${getErrorMessage(data)}`);
+      }
+    } catch (err) {
+      setCatMessageType('error');
+      setCatMessage(`Error: ${err.message}`);
+    }
+  };
+
+  // Fetch Users
+  const fetchUsers = async () => {
+    setUsersLoading(true);
+    setUserMessage('');
+
+    try {
+      const url = showDeletedUsers
+        ? `${API_BASE}/users?includeDeleted=true`
+        : `${API_BASE}/users`;
+
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setUsers(data.data || []);
+        setUserMessageType('success');
+        const activeCount = data.data?.filter(u => !u.isDeleted).length || 0;
+        const deletedCount = data.data?.filter(u => u.isDeleted).length || 0;
+        setUserMessage(`Found ${activeCount} active users${deletedCount > 0 ? `, ${deletedCount} deleted` : ''}`);
+      } else {
+        setUserMessageType('error');
+        setUserMessage(`Error fetching users: ${getErrorMessage(data)}`);
+      }
+    } catch (err) {
+      setUserMessageType('error');
+      setUserMessage(`Error: ${err.message}`);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token && showUserManagement) {
+      fetchUsers();
+    }
+  }, [showDeletedUsers, token, showUserManagement]);
+
+  // Create User
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    setUsersLoading(true);
+    setUserMessage('');
+
+    try {
+      const res = await fetch(`${API_BASE}/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: newUser.name.trim(),
+          email: newUser.email.trim().toLowerCase(),
+          password: newUser.password,
+          role: newUser.role
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setUserMessageType('success');
+        setUserMessage('User created successfully!');
+        setNewUser({ name: '', email: '', password: '', role: 'USER' });
+        setShowAddUser(false);
+        await fetchUsers();
+      } else {
+        setUserMessageType('error');
+        setUserMessage(`Failed to create user: ${getErrorMessage(data)}`);
+      }
+    } catch (err) {
+      setUserMessageType('error');
+      setUserMessage(`Error: ${err.message}`);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  // Delete User
+  const handleDeleteUser = async (userId) => {
+    const userToDelete = users.find(u => u.id === userId);
+
+    if (userToDelete && userToDelete.email === userEmail) {
+      setUserMessageType('error');
+      setUserMessage('You cannot delete your own account!');
+      return;
+    }
+
+    if (userToDelete?.role === 'ADMIN') {
+      const adminCount = users.filter(u => u.role === 'ADMIN' && !u.isDeleted).length;
+      if (adminCount <= 1) {
+        setUserMessageType('error');
+        setUserMessage('Cannot delete the last admin user!');
+        return;
+      }
+    }
+
+    if (!window.confirm('Are you sure you want to delete this user?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setUserMessageType('success');
+        setUserMessage('User deleted successfully!');
+        await fetchUsers();
+      } else {
+        setUserMessageType('error');
+        setUserMessage(`Failed to delete user: ${getErrorMessage(data)}`);
+      }
+    } catch (err) {
+      setUserMessageType('error');
+      setUserMessage(`Error: ${err.message}`);
+    }
+  };
+
+  // Restore User
+  const handleRestoreUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to restore this user?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/users/${userId}/restore`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setUserMessageType('success');
+        setUserMessage('User restored successfully!');
+        await fetchUsers();
+      } else {
+        setUserMessageType('error');
+        setUserMessage(`Failed to restore user: ${getErrorMessage(data)}`);
+      }
+    } catch (err) {
+      setUserMessageType('error');
+      setUserMessage(`Error: ${err.message}`);
+    }
   };
 
   useEffect(() => {
@@ -756,7 +972,25 @@ function App() {
       {/* Categories Section - visible when logged in */}
       {token && (
         <section>
-          <h2 className="text-2xl font-semibold mb-4">Categories</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold">Categories</h2>
+            {userRole === 'ADMIN' && (
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showDeletedUsers}
+                    onChange={(e) => {
+                      setShowDeletedUsers(e.target.checked);
+                    }}
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  />
+                  Show Deleted Users
+                </label>
+              </div>
+            )}
+          </div>
+
           {userRole === 'ADMIN' && (
             <form onSubmit={handleAddCategory} className="mb-2.5 flex flex-wrap gap-2">
               <input
@@ -787,30 +1021,55 @@ function App() {
                 <tr className="bg-gray-100">
                   <th className="p-2 text-left border border-gray-300">ID</th>
                   <th className="p-2 text-left border border-gray-300">Name</th>
+                  {userRole === 'ADMIN' && (
+                    <th className="p-2 text-left border border-gray-300">Status</th>
+                  )}
                   <th className="p-2 text-left border border-gray-300">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {categories.length === 0 ? (
                   <tr>
-                    <td colSpan="3" className="p-2 text-center border border-gray-300">
+                    <td colSpan={userRole === 'ADMIN' ? 4 : 3} className="p-2 text-center border border-gray-300">
                       No categories found
                     </td>
                   </tr>
                 ) : (
                   categories.map((cat) => (
-                    <tr key={cat.id}>
+                    <tr key={cat.id} className={cat.isDeleted ? 'bg-gray-100 opacity-70' : ''}>
                       <td className="p-2 border border-gray-300">{cat.id}</td>
-                      <td className="p-2 border border-gray-300">{cat.name}</td>
+                      <td className={`p-2 border border-gray-300 ${cat.isDeleted ? 'line-through text-gray-500' : ''}`}>
+                        {cat.name}
+                      </td>
+                      {userRole === 'ADMIN' && (
+                        <td className="p-2 border border-gray-300">
+                          <span className={`px-2 py-1 rounded-[3px] text-xs font-medium ${cat.isDeleted
+                            ? 'bg-red-100 text-red-700 border border-red-200'
+                            : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                            }`}>
+                            {cat.isDeleted ? 'Deleted' : 'Active'}
+                          </span>
+                        </td>
+                      )}
                       <td className="p-2 border border-gray-300">
                         {userRole === 'ADMIN' && (
-                          <button
-                            onClick={() => handleDeleteCategory(cat.id)}
-                            disabled={isCategoryLoading}
-                            className="px-2.5 py-1 text-xs rounded-[3px] font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Delete
-                          </button>
+                          cat.isDeleted ? (
+                            <button
+                              onClick={() => handleRestoreCategory(cat.id)}
+                              disabled={isCategoryLoading}
+                              className="px-2.5 py-1 text-xs rounded-[3px] font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors disabled:opacity-50"
+                            >
+                              Restore
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleDeleteCategory(cat.id)}
+                              disabled={isCategoryLoading}
+                              className="px-2.5 py-1 text-xs rounded-[3px] font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors disabled:opacity-50"
+                            >
+                              Delete
+                            </button>
+                          )
                         )}
                       </td>
                     </tr>
@@ -1017,6 +1276,139 @@ function App() {
         )}
       </section>
 
+      {/* User Management - Admin Only */}
+      {token && userRole === 'ADMIN' && (
+        <>
+          <hr className="my-7 border-gray-300" />
+          <section>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold">User Management</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowUserManagement(!showUserManagement);
+                    if (!showUserManagement) fetchUsers();
+                  }}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                >
+                  {showUserManagement ? 'Hide Users' : 'Show Users'}
+                </button>
+              </div>
+            </div>
+
+            {showUserManagement && (
+              <div>
+                <div className="flex flex-wrap items-center gap-4 mb-4">
+                  <button
+                    onClick={() => setShowAddUser(true)}
+                    className="px-4 py-2 bg-[#28a745] text-white rounded hover:bg-emerald-600 transition-colors"
+                  >
+                    + Add User
+                  </button>
+
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showDeletedUsers}
+                      onChange={(e) => {
+                        setShowDeletedUsers(e.target.checked);
+                        fetchUsers(); // Fetch immediately when toggled
+                      }}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    Show Deleted Users
+                  </label>
+
+                  {showDeletedUsers && (
+                    <span className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded border border-amber-200">
+                      Deleted users are shown in gray
+                    </span>
+                  )}
+                </div>
+
+                {renderMessage(userMessage, userMessageType)}
+
+                {usersLoading && !userMessage && <p className="text-gray-600">Loading users...</p>}
+
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border border-gray-300">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="p-2 text-left border border-gray-300">ID</th>
+                        <th className="p-2 text-left border border-gray-300">Name</th>
+                        <th className="p-2 text-left border border-gray-300">Email</th>
+                        <th className="p-2 text-left border border-gray-300">Role</th>
+                        <th className="p-2 text-left border border-gray-300">Status</th>
+                        <th className="p-2 text-left border border-gray-300">Created</th>
+                        <th className="p-2 text-left border border-gray-300">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.length === 0 ? (
+                        <tr>
+                          <td colSpan="7" className="p-2 text-center border border-gray-300">
+                            No users found
+                          </td>
+                        </tr>
+                      ) : (
+                        users.map((user) => (
+                          <tr
+                            key={user.id}
+                            className={`hover:bg-gray-50 transition-colors ${user.isDeleted ? 'bg-gray-100 opacity-70' : ''}`}
+                          >
+                            <td className="p-2 border border-gray-300">{user.id}</td>
+                            <td className={`p-2 border border-gray-300 ${user.isDeleted ? 'line-through text-gray-500' : ''}`}>
+                              {user.name}
+                            </td>
+                            <td className="p-2 border border-gray-300">{user.email}</td>
+                            <td className="p-2 border border-gray-300">
+                              <span className={`px-2 py-1 rounded-[3px] text-xs font-medium ${user.role === 'ADMIN'
+                                ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                                : 'bg-blue-100 text-blue-700 border border-blue-200'
+                                }`}>
+                                {user.role}
+                              </span>
+                            </td>
+                            <td className="p-2 border border-gray-300">
+                              <span className={`px-2 py-1 rounded-[3px] text-xs font-medium ${user.isDeleted
+                                ? 'bg-red-100 text-red-700 border border-red-200'
+                                : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                }`}>
+                                {user.isDeleted ? 'Deleted' : 'Active'}
+                              </span>
+                            </td>
+                            <td className="p-2 border border-gray-300">
+                              {new Date(user.createdAt).toLocaleString()}
+                            </td>
+                            <td className="p-2 border border-gray-300">
+                              {user.isDeleted ? (
+                                <button
+                                  onClick={() => handleRestoreUser(user.id)}
+                                  className="px-2.5 py-1 text-xs rounded-[3px] font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                                >
+                                  Restore
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleDeleteUser(user.id)}
+                                  className="px-2.5 py-1 text-xs rounded-[3px] font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors"
+                                >
+                                  Delete
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </section>
+        </>
+      )}
+
       {/* Add Product Modal */}
       {showAddProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1193,6 +1585,91 @@ function App() {
         </div>
       )}
 
+      {/* Add User Modal */}
+      {showAddUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[3px] max-w-md w-full p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h2 className="text-2xl font-bold">Add New User</h2>
+              <button
+                onClick={() => {
+                  setShowAddUser(false);
+                  setUserMessage('');
+                  setNewUser({ name: '', email: '', password: '', role: 'USER' });
+                }}
+                className="text-gray-500 hover:text-gray-700 text-3xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleCreateUser}>
+              <div className="mb-3">
+                <label className="block mb-1 font-medium">Name *</label>
+                <input
+                  type="text"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                  required
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block mb-1 font-medium">Email *</label>
+                <input
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  required
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block mb-1 font-medium">Password *</label>
+                <input
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  required
+                  minLength="6"
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block mb-1 font-medium">Role</label>
+                <select
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="USER">User</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <button
+                  type="submit"
+                  disabled={usersLoading}
+                  className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-[3px] hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {usersLoading ? 'Creating...' : 'Create User'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddUser(false);
+                    setUserMessage('');
+                    setNewUser({ name: '', email: '', password: '', role: 'USER' });
+                  }}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-[3px] hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Product Detail Loading */}
       {isProductDetailLoading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1311,7 +1788,6 @@ function App() {
                             {new Date(review.createdAt).toLocaleString()}
                           </p>
                         </div>
-                        {/* Delete button - only for review owner */}
                         {token && review.userId === userEmail && (
                           <button
                             onClick={() => handleDeleteReview(review.id)}
