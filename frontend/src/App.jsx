@@ -681,6 +681,8 @@ function App() {
         {isProductsLoading && !prodMessage && <p className="text-gray-600">Loading products...</p>}
 
         <div className="overflow-x-auto mt-2.5">
+
+          <p className="text-sm text-black-500 my-2">* Click on any row to view product details</p>
           <table className="w-full border-collapse border border-gray-300">
             <thead>
               <tr className="bg-gray-100">
@@ -717,8 +719,6 @@ function App() {
               )}
             </tbody>
           </table>
-          {/* hint text */}
-          <p className="text-sm text-gray-500 mt-2"> Click on any row to view product details</p>
         </div>
 
         {prodMeta && products.length > 0 && (
@@ -747,6 +747,87 @@ function App() {
           </div>
         )}
       </section>
+
+      {/* Product Detail Loading */}
+      {isProductDetailLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-[3px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-4 text-black-600">Loading product details...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Product Detail Modal */}
+      {showProductDetail && productDetail && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[3px] max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h2 className="text-2xl font-bold">{productDetail.name}</h2>
+              <button
+                onClick={() => {
+                  setShowProductDetail(false);
+                  setProductDetail(null);
+                }}
+                className="text-gray-500 hover:text-gray-700 text-3xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <p className="text-black-600 mb-2">
+                  <strong>Price:</strong> ${parseFloat(productDetail.price).toFixed(2)}
+                </p>
+                <p className="text-black-600 mb-2">
+                  <strong>Category:</strong> {productDetail.category?.name || 'N/A'}
+                </p>
+                <p className="text-black-600 mb-2">
+                  <strong>Added by:</strong> {productDetail.user?.name || 'Unknown'}
+                </p>
+                <p className="text-black-600 mb-2">
+                  <strong>Status:</strong> {productDetail.status || 'ACTIVE'}
+                </p>
+                <p className="text-black-600">
+                  <strong>Created:</strong> {new Date(productDetail.createdAt).toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <h3 className="text-black-600 font-semibold mb-2">Description</h3>
+                <p className="text-black-600">
+                  {productDetail.description || 'No description available'}
+                </p>
+              </div>
+            </div>
+
+            {/* Reviews Section */}
+            <div className="border-t pt-4">
+              <h3 className="text-black-600 font-semibold mb-4">
+                Reviews ({productDetail.reviews?.length || 0})
+              </h3>
+              {productDetail.reviews?.length === 0 ? (
+                <p className="text-black-600">No reviews yet.</p>
+              ) : (
+                <div className="space-y-4">
+                  {productDetail.reviews?.map((review) => (
+                    <div key={review.id} className="border rounded p-4 bg-gray-50">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{review.user?.name || 'Anonymous'}</span>
+                        <span className="text-yellow-500">Rating: {review.rating}/5</span>
+                      </div>
+                      <p className="text-gray-700 mt-2">{review.comment}</p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {new Date(review.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
