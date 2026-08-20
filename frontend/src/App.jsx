@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import AdminStats from './components/AdminStats';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -15,6 +16,7 @@ function App() {
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
   const [userRole, setUserRole] = useState(localStorage.getItem('role') || '');
+  const [showStats, setShowStats] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Registration Form State
@@ -717,6 +719,7 @@ function App() {
         setUserName(data.data.user.name || '');
         const role = data.data.user.role || '';
         setUserRole(role);
+        setShowStats(true);
         localStorage.setItem('token', newToken);
         if (role) localStorage.setItem('role', role);
         setLoginMessageType('success');
@@ -740,6 +743,7 @@ function App() {
     setUserEmail('');
     setUserName('');
     setUserRole('');
+    setShowStats(false);
     setCategories([]);
     setProducts([]);
     setProdMeta(null);
@@ -922,28 +926,6 @@ function App() {
                   required
                   className="p-2 w-full box-border border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-              </div>
-              <div className="mb-2.5 flex gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginEmail('admin@test.dev');
-                    setLoginPassword('admin123');
-                  }}
-                  className="flex-1 py-1.5 bg-gray-500 text-white border-none cursor-pointer text-sm rounded hover:bg-gray-600 transition-colors"
-                >
-                  Admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginEmail('user@test.dev');
-                    setLoginPassword('user123');
-                  }}
-                  className="flex-1 py-1.5 bg-gray-500 text-white border-none cursor-pointer text-sm rounded hover:bg-gray-600 transition-colors"
-                >
-                  User
-                </button>
               </div>
               <button
                 type="submit"
@@ -1345,6 +1327,16 @@ function App() {
           </div>
         )}
       </section>
+
+      {/* Admin Stats Section */}
+      {token && userRole === 'ADMIN' && showStats && (
+        <>
+          <hr className="my-7 border-gray-300" />
+          <section>
+            <AdminStats token={token} />
+          </section>
+        </>
+      )}
 
       {/* User Management - Admin Only */}
       {token && userRole === 'ADMIN' && (
