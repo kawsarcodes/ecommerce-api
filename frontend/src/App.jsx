@@ -846,15 +846,6 @@ function App() {
     }
   };
 
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (prodPage > 1) {
-      fetchProducts(prodPage - 1);
-    }
-  };
-
   const renderMessage = (message, type) => {
     if (!message) return null;
 
@@ -935,28 +926,6 @@ function App() {
                   required
                   className="p-2 w-full box-border border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-              </div>
-              <div className="mb-2.5 flex gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginEmail('admin@test.dev');
-                    setLoginPassword('admin123');
-                  }}
-                  className="flex-1 py-1.5 bg-gray-500 text-white border-none cursor-pointer text-sm rounded hover:bg-gray-600 transition-colors"
-                >
-                  Admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginEmail('user@test.dev');
-                    setLoginPassword('user123');
-                  }}
-                  className="flex-1 py-1.5 bg-gray-500 text-white border-none cursor-pointer text-sm rounded hover:bg-gray-600 transition-colors"
-                >
-                  User
-                </button>
               </div>
               <button
                 type="submit"

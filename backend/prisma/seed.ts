@@ -12,9 +12,21 @@ async function main() {
 
   // Users
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@test.dev';
-  const adminPasswordPlain = process.env.ADMIN_PASSWORD || 'admin123';
+  const adminPasswordPlain = process.env.ADMIN_PASSWORD;
   const userEmail = process.env.USER_EMAIL || 'user@test.dev';
-  const userPasswordPlain = process.env.USER_PASSWORD || 'user123';
+  const userPasswordPlain = process.env.USER_PASSWORD;
+  
+  if (!adminPasswordPlain) {
+    console.error('ERROR: ADMIN_PASSWORD environment variable is not set!');
+    console.error('Please add ADMIN_PASSWORD to your .env file');
+    process.exit(1);
+  }
+
+  if (!userPasswordPlain) {
+    console.error('ERROR: USER_PASSWORD environment variable is not set!');
+    console.error('Please add USER_PASSWORD to your .env file');
+    process.exit(1);
+  }
 
   const passwordAdmin = await bcrypt.hash(adminPasswordPlain, 10);
   const passwordUser = await bcrypt.hash(userPasswordPlain, 10);
