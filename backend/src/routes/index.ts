@@ -4,6 +4,7 @@ import userRoutes from './user.routes';
 import categoryRoutes from './category.routes';
 import productRoutes from './product.routes';
 import reviewRoutes from './review.routes';
+import statsRoutes from './stats.routes';
 
 const router = Router();
 
@@ -27,6 +28,10 @@ const moduleRoutes = [
   {
     path: '/reviews',
     route: reviewRoutes,
+  },
+  {
+    path: '/stats',
+    route: statsRoutes,
   },
 ];
 

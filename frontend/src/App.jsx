@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import AdminStats from './components/AdminStats';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -15,6 +16,7 @@ function App() {
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
   const [userRole, setUserRole] = useState(localStorage.getItem('role') || '');
+  const [showStats, setShowStats] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Registration Form State
@@ -717,6 +719,7 @@ function App() {
         setUserName(data.data.user.name || '');
         const role = data.data.user.role || '';
         setUserRole(role);
+        setShowStats(true);
         localStorage.setItem('token', newToken);
         if (role) localStorage.setItem('role', role);
         setLoginMessageType('success');
@@ -740,6 +743,7 @@ function App() {
     setUserEmail('');
     setUserName('');
     setUserRole('');
+    setShowStats(false);
     setCategories([]);
     setProducts([]);
     setProdMeta(null);
@@ -833,6 +837,15 @@ function App() {
   const handleNextPage = () => {
     if (prodMeta && prodPage < prodMeta.totalPages) {
       fetchProducts(prodPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (prodPage > 1) {
+      fetchProducts(prodPage - 1);
+    }
+  };
+
     }
   };
 
@@ -1345,6 +1358,16 @@ function App() {
           </div>
         )}
       </section>
+
+      {/* Admin Stats Section */}
+      {token && userRole === 'ADMIN' && showStats && (
+        <>
+          <hr className="my-7 border-gray-300" />
+          <section>
+            <AdminStats token={token} />
+          </section>
+        </>
+      )}
 
       {/* User Management - Admin Only */}
       {token && userRole === 'ADMIN' && (
